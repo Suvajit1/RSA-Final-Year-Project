@@ -5,9 +5,9 @@ rsa_decrypt.py
 Decrypts an RSA-encrypted ciphertext file using a private key stored in a CSV file.
 
 Usage:
-    python rsa_decrypt.py <ciphertext_filename> <private_key_csv>
+    python3 rsa_decrypt.py <ciphertext_filename> <private_key_csv>
 Example:
-    python rsa_decrypt.py message_cipher.txt private_key.csv
+    python3 rsa_decrypt.py message_cipher.txt private_key.csv
 
 The script:
     - Reads the ciphertext file. Each line should be formatted as "block_length,ciphertext".
@@ -21,8 +21,8 @@ The script:
 import sys, os, time, csv
 
 def usage():
-    print("Usage: python rsa_decrypt.py <ciphertext_filename> <private_key_csv>")
-    print("Example: python rsa_decrypt.py message_cipher.txt private_key.csv")
+    print("Usage: python3 rsa_decrypt.py <ciphertext_filename> <private_key_csv>")
+    print("Example: python3 rsa_decrypt.py message_cipher.txt private_key.csv")
     sys.exit(1)
 
 def main():
