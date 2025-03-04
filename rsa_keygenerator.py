@@ -19,7 +19,7 @@ This script:
 """
 
 from sage.all import *
-import sys, random, csv
+import sys, random, csv, time
 
 def generate_prime(bits):
     """
@@ -41,6 +41,8 @@ def main():
     except ValueError:
         print("Error: bit_length must be an integer (e.g., 512, 1024).")
         sys.exit(1)
+
+    start_time = time.time()  # Start timer for key generation
 
     # Generate two primes of the given bit length.
     p = generate_prime(bits)
@@ -69,6 +71,9 @@ def main():
         writer = csv.writer(priv_file)
         writer.writerow(["d", "n"])
         writer.writerow([int(d), int(n)])
+    
+    end_time = time.time()  # End timer after keys are generated and saved
+    elapsed = end_time - start_time
 
     # Output the keys.
     # print("Public key (e, n):")
@@ -81,6 +86,7 @@ def main():
     print("Keys generated successfully.")
     print("Public key stored in public_key.csv")
     print("Private key stored in private_key.csv")
+    print("Time taken to generate keys: {:.6f} seconds".format(elapsed))
 
 if __name__ == "__main__":
     main()
