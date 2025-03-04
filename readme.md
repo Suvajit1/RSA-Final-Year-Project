@@ -1,4 +1,3 @@
-```markdown
 # RSA Encryption with SageMath
 
 This project demonstrates a simple RSA encryption system implemented using SageMath. It consists of scripts for key generation, encryption, and decryption, along with a test driver that verifies the entire process.
@@ -79,17 +78,3 @@ This project demonstrates a simple RSA encryption system implemented using SageM
    python3 test_rsa.py
    ```
    This script runs an end-to-end test by generating keys, encrypting a sample message, decrypting the ciphertext, and verifying that the decrypted text matches the original.
-
-## Notes
-
-- **Educational Purpose:**  
-  This implementation is for educational and demonstration purposes only.  
-  For real-world applications, use well-tested cryptographic libraries and proper padding schemes (e.g., RSA-OAEP).
-
-- **Message Splitting:**  
-  If the plaintext exceeds the maximum size for a single RSA block, the scripts automatically split the message into blocks. Each block is processed separately and reassembled during decryption.
-
-## License
-
-This project is provided as-is for educational purposes. Use it at your own risk.
-```
