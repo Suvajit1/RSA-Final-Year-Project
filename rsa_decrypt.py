@@ -1,13 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env sage -python
 """
 rsa_decrypt.py
 --------------
 Decrypts an RSA-encrypted ciphertext file using a private key stored in a CSV file.
 
 Usage:
-    python3 rsa_decrypt.py <ciphertext_filename> <private_key_csv>
+    sage rsa_decrypt.py <ciphertext_filename> <private_key_csv>
 Example:
-    python3 rsa_decrypt.py message_cipher.txt private_key.csv
+    sage rsa_decrypt.py message_cipher.txt private_key.csv
 
 The script:
     - Reads the ciphertext file. Each line should be formatted as "block_length,ciphertext".
@@ -18,11 +18,11 @@ The script:
     - Writes the recovered plaintext to an output file (with "_decrypted" appended to the original ciphertext filename).
 """
 
+from sage.all import *
 import sys, os, time, csv
 
 def usage():
-    print("Usage: python3 rsa_decrypt.py <ciphertext_filename> <private_key_csv>")
-    print("Example: python3 rsa_decrypt.py message_cipher.txt private_key.csv")
+    print("Usage: sage rsa_decrypt.py <ciphertext_filename> <private_key_csv>")
     sys.exit(1)
 
 def main():
@@ -36,13 +36,13 @@ def main():
     try:
         with open(private_key_csv, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
-            header = next(reader)  # Skip header.
-            row = next(reader)     # Read key values.
+            next(reader)  # Skip header.
+            row = next(reader)
             if len(row) < 2:
                 print("Error: Invalid private key file format.")
                 sys.exit(1)
-            d = int(row[0])
-            n = int(row[1])
+            d = Integer(row[0])
+            n = Integer(row[1])
     except Exception as ex:
         print("Error reading private key CSV file:", ex)
         sys.exit(1)
@@ -62,7 +62,7 @@ def main():
             try:
                 length_str, c_str = line.split(",")
                 block_lengths.append(int(length_str))
-                encrypted_blocks.append(int(c_str))
+                encrypted_blocks.append(Integer(c_str))
             except Exception as ex:
                 print("Error parsing line:", line)
                 sys.exit(1)
@@ -70,8 +70,9 @@ def main():
     decrypted_bytes = b""
     dec_start_time = time.time()
     for length, c_int in zip(block_lengths, encrypted_blocks):
-        m_int = pow(c_int, d, n)
-        block = m_int.to_bytes(length, byteorder="big")
+        m_int = power_mod(c_int, d, n)
+        # Convert the decrypted integer to bytes, padding to the original block length.
+        block = int(m_int).to_bytes(length, byteorder="big")
         decrypted_bytes += block
     dec_end_time = time.time()
 

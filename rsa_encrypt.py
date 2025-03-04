@@ -1,13 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env sage -python
 """
 rsa_encrypt.py
 --------------
 Encrypts a plaintext file using RSA encryption and a public key stored in a CSV file.
 
 Usage:
-    python3 rsa_encrypt.py <plaintext_filename> <public_key_csv>
+    sage rsa_encrypt.py <plaintext_filename> <public_key_csv>
 Example:
-    python3 rsa_encrypt.py message.txt public_key.csv
+    sage rsa_encrypt.py message.txt public_key.csv
 
 The script:
     - Reads the plaintext from the specified file.
@@ -20,11 +20,11 @@ The script:
       Each line in the output file contains the block's original byte length and the ciphertext, separated by a comma.
 """
 
+from sage.all import *
 import sys, os, time, csv
 
 def usage():
-    print("Usage: python3 rsa_encrypt.py <plaintext_filename> <public_key_csv>")
-    print("Example: python3 rsa_encrypt.py message.txt public_key.csv")
+    print("Usage: sage rsa_encrypt.py <plaintext_filename> <public_key_csv>")
     sys.exit(1)
 
 def split_bytes(b, size):
@@ -44,13 +44,13 @@ def main():
     try:
         with open(public_key_csv, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
-            header = next(reader)  # Skip header.
-            row = next(reader)     # Read key values.
+            next(reader)  # Skip header.
+            row = next(reader)
             if len(row) < 2:
                 print("Error: Invalid public key file format.")
                 sys.exit(1)
-            e = int(row[0])
-            n = int(row[1])
+            e = Integer(row[0])
+            n = Integer(row[1])
     except Exception as ex:
         print("Error reading public key CSV file:", ex)
         sys.exit(1)
@@ -65,8 +65,8 @@ def main():
     plaintext_bytes = plaintext.encode("utf-8")
     
     # Determine block size.
-    # Maximum number of bytes per block is floor(n.bit_length()/8) minus one byte.
-    max_block_size = n.bit_length() // 8
+    # Maximum number of bytes per block is floor(n.nbits()/8) minus one byte.
+    max_block_size = n.nbits() // 8
     block_size = max_block_size - 1 if max_block_size > 1 else max_block_size
 
     blocks = split_bytes(plaintext_bytes, block_size)
@@ -76,8 +76,8 @@ def main():
     enc_start_time = time.time()
     for block in blocks:
         block_lengths.append(len(block))
-        m_int = int.from_bytes(block, byteorder="big")
-        c_int = pow(m_int, e, n)
+        m_int = Integer(int.from_bytes(block, byteorder="big"))
+        c_int = power_mod(m_int, e, n)
         encrypted_blocks.append(c_int)
     enc_end_time = time.time()
 
@@ -87,7 +87,7 @@ def main():
 
     with open(output_filename, "w", encoding="utf-8") as f:
         for length, c in zip(block_lengths, encrypted_blocks):
-            f.write(f"{length},{c}\n")
+            f.write(f"{length},{int(c)}\n")
     
     print("Encryption complete.")
     print("Encrypted file:", output_filename)
