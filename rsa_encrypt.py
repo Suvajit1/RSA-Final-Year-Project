@@ -77,7 +77,7 @@ def main():
     for block in blocks:
         block_lengths.append(len(block))
         m_int = Integer(int.from_bytes(block, byteorder="big"))
-        print("m_int:", hex(m_int))
+        # print("m_int:", hex(m_int))
         c_int = power_mod(m_int, e, n)
         encrypted_blocks.append(c_int)
     enc_end_time = time.time()

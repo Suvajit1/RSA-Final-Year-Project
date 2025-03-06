@@ -1,0 +1,102 @@
+sayan@Sayandas:~/rsa_final-year-project$ python3 benchmark_rsa.py
+=== Task 1: Key Generation Benchmarking ===
+
+Generating keys with key size 512 bits...
+Keys generated successfully.
+Public key stored in public_key.csv
+Private key stored in private_key.csv
+Time taken to generate keys: 1.682002 seconds
+
+Generating keys with key size 768 bits...
+Keys generated successfully.
+Public key stored in public_key.csv
+Private key stored in private_key.csv
+Time taken to generate keys: 6.647626 seconds
+
+Generating keys with key size 1024 bits...
+Keys generated successfully.
+Public key stored in public_key.csv
+Private key stored in private_key.csv
+Time taken to generate keys: 12.920910 seconds
+
+Generating keys with key size 1280 bits...
+Keys generated successfully.
+Public key stored in public_key.csv
+Private key stored in private_key.csv
+Time taken to generate keys: 32.970194 seconds
+
+Generating keys with key size 1536 bits...
+Keys generated successfully.
+Public key stored in public_key.csv
+Private key stored in private_key.csv
+Time taken to generate keys: 80.800950 seconds
+
+Generating keys with key size 1792 bits...
+Keys generated successfully.
+Public key stored in public_key.csv
+Private key stored in private_key.csv
+Time taken to generate keys: 115.398212 seconds
+
+Generating keys with key size 2048 bits...
+Keys generated successfully.
+Public key stored in public_key.csv
+Private key stored in private_key.csv
+Time taken to generate keys: 231.515702 seconds
+
+Re-generating keys with fixed key size 1024 bits for Tasks 2 and 3...
+Keys generated successfully.
+Public key stored in public_key.csv
+Private key stored in private_key.csv
+Time taken to generate keys: 16.835886 seconds
+
+Task 1 complete.
+
+=== Task 2: Encryption Benchmarking ===
+
+Encrypting 1KB message (size: 1024 bytes) from message_1KB.txt ...
+Encryption complete.
+Encrypted file: message_1KB_cipher.txt
+Time taken to encrypt: 0.038229 seconds
+
+Encrypting 10KB message (size: 10240 bytes) from message_10KB.txt ...
+Encryption complete.
+Encrypted file: message_10KB_cipher.txt
+Time taken to encrypt: 0.298897 seconds
+
+Encrypting 100KB message (size: 102400 bytes) from message_100KB.txt ...
+Encryption complete.
+Encrypted file: message_100KB_cipher.txt
+Time taken to encrypt: 0.284183 seconds
+
+Encrypting 1MB message (size: 1048576 bytes) from message_1MB.txt ...
+Encryption complete.
+Encrypted file: message_1MB_cipher.txt
+Time taken to encrypt: 27.436311 seconds
+
+Task 2 complete.
+
+=== Task 3: Decryption Benchmarking ===
+
+Decrypting ciphertext for 1KB message from message_1KB_cipher.txt ...
+Decryption complete.
+Decrypted file: message_1KB_cipher_decrypted.txt
+Time taken to decrypt: 0.032458 seconds
+
+Decrypting ciphertext for 10KB message from message_10KB_cipher.txt ...
+Decryption complete.
+Decrypted file: message_10KB_cipher_decrypted.txt
+Time taken to decrypt: 0.256721 seconds
+
+Decrypting ciphertext for 100KB message from message_100KB_cipher.txt ...
+Decryption complete.
+Decrypted file: message_100KB_cipher_decrypted.txt
+Time taken to decrypt: 2.758027 seconds
+
+Decrypting ciphertext for 1MB message from message_1MB_cipher.txt ...
+Decryption complete.
+Decrypted file: message_1MB_cipher_decrypted.txt
+Time taken to decrypt: 24.561238 seconds
+
+Task 3 complete.
+
+Benchmarking completed.
