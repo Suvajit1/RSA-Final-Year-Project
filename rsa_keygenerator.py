@@ -47,8 +47,8 @@ def main():
     # Generate two primes of the given bit length.
     p = generate_prime(bits)
     q = generate_prime(bits)
-    # print("p =", p)
-    # print("q =", q)
+    print(f"p = {p} ({len(str(p))} digits)")
+    print(f"q = {q} ({len(str(q))} digits)")
     n = p * q
     phi = (p - 1) * (q - 1)
 
@@ -76,12 +76,12 @@ def main():
     elapsed = end_time - start_time
 
     # Output the keys.
-    # print("Public key (e, n):")
-    # print("e =", e)
-    # print("n =", n)
-    # print("\nPrivate key (d, n):")
-    # print("d =", d)
-    # print("n =", n)
+    print("Public key (e, n):")
+    print("e =", e)
+    print("n =", n)
+    print("\nPrivate key (d, n):")
+    print("d =", d)
+    print("n =", n)
 
     print("Keys generated successfully.")
     print("Public key stored in public_key.csv")
