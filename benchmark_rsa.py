@@ -53,12 +53,13 @@ def main():
     # Task 2: Encryption
     # --------------------------
     print("=== Task 2: Encryption Benchmarking ===")
-    # Define message sizes (in bytes): 1KB, 10KB, 100KB, 1MB.
+    # Define message sizes (in bytes): 1KB, 10KB, 100KB, 1MB, 10MB.
     message_sizes = {
         "1KB": 1024,
         "10KB": 10 * 1024,
         "100KB": 100 * 1024,
-        "1MB": 1024 * 1024
+        "1MB": 1024 * 1024,
+        "10MB": 10 * 1024 * 1024
     }
     
     for label, size in message_sizes.items():
