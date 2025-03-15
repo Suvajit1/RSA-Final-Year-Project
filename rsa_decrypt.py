@@ -2,20 +2,19 @@
 """
 rsa_decrypt.py
 --------------
-Decrypts an RSA-encrypted ciphertext file using a private key stored in a CSV file.
-
 Usage:
     sage rsa_decrypt.py <ciphertext_filename> <private_key_csv>
 Example:
     sage rsa_decrypt.py message_cipher.txt private_key.csv
 
-The script:
-    - Reads the ciphertext file. Each line should be formatted as "block_length,ciphertext".
-    - Reads the private key (d, n) from the CSV file.
-    - Decrypts each block using RSA: m = c^d mod n.
-    - Converts each decrypted integer back to its original bytes (using the stored block length).
-    - Reassembles the blocks into the original plaintext.
-    - Writes the recovered plaintext to an output file (with "_decrypted" appended to the original ciphertext filename).
+Decrypts an RSA-encrypted ciphertext file using a private key stored in a CSV file.
+Each ciphertext corresponds to a fixed-size block of length block_size, where:
+    block_size = (n.nbits() - 1) // 8.
+After decryption, the block is interpreted as follows:
+  - The first byte (header) gives L, the actual number of message bytes in this block.
+  - The next L bytes are the true message.
+  - The remaining bytes are random padding and are discarded.
+The recovered message blocks are concatenated and then written to an output file.
 """
 
 from sage.all import *
@@ -32,11 +31,11 @@ def main():
     ciphertext_filename = sys.argv[1]
     private_key_csv = sys.argv[2]
     
-    # Read private key from CSV file.
+    # Read private key (d, n) from CSV.
     try:
         with open(private_key_csv, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
-            next(reader)  # Skip header.
+            next(reader)  # skip header
             row = next(reader)
             if len(row) < 2:
                 print("Error: Invalid private key file format.")
@@ -51,29 +50,38 @@ def main():
         print("Error: File", ciphertext_filename, "does not exist.")
         sys.exit(1)
     
+    # Determine block size.
+    block_size = (n.nbits() - 1) // 8
+    if block_size < 15:
+        print("Error: Block size too small.")
+        sys.exit(1)
+    data_size = block_size - 15  # number of bytes allocated for actual message
+    
     # Read ciphertext file.
     encrypted_blocks = []
-    block_lengths = []
     with open(ciphertext_filename, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
             try:
-                length_str, c_str = line.split(",")
-                block_lengths.append(int(length_str))
-                encrypted_blocks.append(Integer(c_str))
+                c_int = Integer(line)
+                encrypted_blocks.append(c_int)
             except Exception as ex:
                 print("Error parsing line:", line)
                 sys.exit(1)
     
     decrypted_bytes = b""
     dec_start_time = time.time()
-    for length, c_int in zip(block_lengths, encrypted_blocks):
+    for c_int in encrypted_blocks:
         m_int = power_mod(c_int, d, n)
-        # Convert the decrypted integer to bytes, padding to the original block length.
-        block = int(m_int).to_bytes(length, byteorder="big")
-        decrypted_bytes += block
+        # Convert decrypted integer back to a full block (block_size bytes).
+        block_bytes = int(m_int).to_bytes(block_size, byteorder="big")
+        # Extract header (first byte): actual message length L.
+        L = block_bytes[0]
+        # Extract the actual message bytes: next L bytes.
+        message_part = block_bytes[1:1+L]
+        decrypted_bytes += message_part
     dec_end_time = time.time()
 
     try:
@@ -82,10 +90,9 @@ def main():
         print("Error: Decrypted bytes do not form valid UTF-8.")
         sys.exit(1)
     
-    # Prepare output filename: insert _decrypted before file extension.
+    # Prepare output filename.
     base, ext = os.path.splitext(ciphertext_filename)
     output_filename = f"{base}_decrypted{ext}" if ext else f"{ciphertext_filename}_decrypted"
-    
     with open(output_filename, "w", encoding="utf-8") as f:
         f.write(plaintext)
     

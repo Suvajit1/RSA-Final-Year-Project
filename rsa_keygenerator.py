@@ -7,7 +7,7 @@ Generates RSA keys using primes of a specified bit length and stores keys in CSV
 Usage:
     sage rsa_keygenerator.py <bit_length>
 Example:
-    sage rsa_keygenerator.py 512
+    sage rsa_keygenerator.py 1024
 
 This script:
     - Generates two prime numbers (p and q) of the given bit length.
