@@ -53,7 +53,7 @@ def main():
     phi = (p - 1) * (q - 1)
 
     # Set e as a prime with bit length equal to the provided bit length.
-    e = generate_prime((bits*2)-1)
+    e = generate_prime((bits-1)*2)
     while gcd(e, phi) != 1:
         e = next_prime(e)
 
