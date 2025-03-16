@@ -4,76 +4,137 @@ test_rsa.py
 -----------
 Test driver for RSA key generation, encryption, and decryption using SageMath.
 
+This driver runs two groups of tests:
+
+Group 1 (Normal key size 1024):
+  - Runs key generation with key size 1024.
+  - Computes block_size = ((1024*2) - 1) // 8 and data_area = block_size - 15.
+  - Then runs encryption and decryption on messages with different sizes:
+       * Message length exactly equal to data_area.
+       * One byte smaller than data_area.
+       * One byte larger than data_area.
+       * A very small message.
+       * A very large message (1 MB).
+       
+Group 2 (Small key size 64):
+  - Runs key generation with key size 64.
+  - Computes block_size = ((64*2)-1)//8 (which yields 15) so data_area becomes 0.
+  - Then attempts to run encryption/decryption with a dummy message,
+    which is expected to fail.
+    
 Usage:
     python3 test_rsa.py
 
-This script:
-  1. Writes a sample plaintext to a file.
-  2. Runs rsa_keygenerator.py (via Sage) to generate keys (storing them in public_key.csv and private_key.csv).
-  3. Runs rsa_encrypt.py (via Sage) using the public key to encrypt the plaintext file.
-  4. Runs rsa_decrypt.py (via Sage) using the private key to decrypt the ciphertext file.
-  5. Compares the original plaintext with the decrypted plaintext and prints a success or failure message.
+Note: All output from the underlying RSA scripts (key generation, encryption, decryption)
+      is printed to the console.
 """
 
-import subprocess
-import os
-import sys
+import subprocess, os, sys, random, string
 
-def run_command(cmd):
-    """Helper to run a command and return the CompletedProcess object."""
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"Command failed: {cmd}")
-        print("Error output:", result.stderr)
-        sys.exit(1)
+def run_command(cmd, expect_error=False):
+    """Run a command using subprocess.run() without suppressing output."""
+    print("\nRunning command:")
+    print(cmd)
+    result = subprocess.run(cmd, shell=True)
+    if expect_error:
+        if result.returncode == 0:
+            print("ERROR: Expected an error but command succeeded:", cmd)
+            sys.exit(1)
+        else:
+            print("Expected error occurred for:", cmd)
+    else:
+        if result.returncode != 0:
+            print("ERROR: Command failed:", cmd)
+            sys.exit(1)
     return result
 
-def main():
-    # Step 1: Write sample plaintext to a file.
-    plaintext_file = "message.txt"
-    # sample_text = "This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath.This is a test message for RSA encryption and decryption using SageMath."
-    # with open(plaintext_file, "w", encoding="utf-8") as f:
-    #     f.write(sample_text)
-    # print(f"Sample plaintext written to {plaintext_file}")
+def compute_data_area(key_size):
+    """
+    Compute block_size and data_area based on the key size.
+    The RSA key generator produces keys such that modulus n has ~2*key_size bits.
+    Then we define:
+       block_size = ((key_size * 2) - 1) // 8
+       data_area = block_size - 15
+    """
+    block_size = ((key_size * 2) - 1) // 8
+    data_area = block_size - 15
+    return block_size, data_area
 
-    # Step 2: Generate RSA keys using a 512-bit key (adjust as needed).
-    cmd_keygen = "sage rsa_keygenerator.py 1024"
-    print("Running key generation...")
-    result = run_command(cmd_keygen)
-    print(result.stdout)
-
-    # Step 3: Encrypt the plaintext file using the public key.
-    cmd_encrypt = f"sage rsa_encrypt.py {plaintext_file} public_key.csv"
-    print("Running encryption...")
-    result = run_command(cmd_encrypt)
-    print(result.stdout)
-
-    # Determine the ciphertext filename (appending _cipher to the plaintext filename).
-    base, ext = os.path.splitext(plaintext_file)
-    ciphertext_file = f"{base}_cipher{ext}" if ext else f"{plaintext_file}_cipher"
-
-    # Step 4: Decrypt the ciphertext file using the private key.
-    cmd_decrypt = f"sage rsa_decrypt.py {ciphertext_file} private_key.csv"
-    print("Running decryption...")
-    result = run_command(cmd_decrypt)
-    print(result.stdout)
-
-    # Determine the decrypted filename (appending _decrypted to the ciphertext filename).
-    base_dec, ext_dec = os.path.splitext(ciphertext_file)
-    decrypted_file = f"{base_dec}_decrypted{ext_dec}" if ext_dec else f"{ciphertext_file}_decrypted"
-
-    # Step 5: Compare original plaintext and decrypted plaintext.
-    with open(plaintext_file, "r", encoding="utf-8") as f:
-        original_text = f.read()
-    with open(decrypted_file, "r", encoding="utf-8") as f:
-        decrypted_text = f.read()
-
-    if original_text == decrypted_text:
-        print("SUCCESS: Decrypted text matches the original!")
+def run_test(message_text, test_label):
+    """
+    Run encryption and decryption on the provided message_text.
+    The keys are assumed to be already generated.
+    """
+    message_filename = f"message_{test_label}.txt"
+    with open(message_filename, "w", encoding="utf-8") as f:
+        f.write(message_text)
+    
+    # Run encryption.
+    cmd_encrypt = f"sage rsa_encrypt.py {message_filename} public_key.csv"
+    run_command(cmd_encrypt)
+    
+    # Compute expected ciphertext file name.
+    base, ext = os.path.splitext(message_filename)
+    ciphertext_filename = f"{base}_cipher{ext}" if ext else f"{message_filename}_cipher"
+    
+    # Run decryption.
+    cmd_decrypt = f"sage rsa_decrypt.py {ciphertext_filename} private_key.csv"
+    run_command(cmd_decrypt)
+    
+    # Compute decrypted file name.
+    base_dec, ext_dec = os.path.splitext(ciphertext_filename)
+    decrypted_filename = f"{base_dec}_decrypted{ext_dec}" if ext_dec else f"{ciphertext_filename}_decrypted"
+    
+    # Compare the original and decrypted messages.
+    with open(message_filename, "r", encoding="utf-8") as f:
+        original = f.read()
+    with open(decrypted_filename, "r", encoding="utf-8") as f:
+        decrypted = f.read()
+    
+    if original == decrypted:
+        print(f"SUCCESS ({test_label}): Decrypted text matches the original!")
     else:
-        print("FAILURE: Decrypted text does not match the original.")
-        print("Original text:", original_text)
-        print("Decrypted text:", decrypted_text)
+        print(f"FAILURE ({test_label}): Decrypted text does not match the original.")
+        print("Original:", original)
+        print("Decrypted:", decrypted)
+
+def main():
+    print("=== Group 1: Normal Key Size (1024 bits) ===")
+    # Run key generation for 1024-bit keys.
+    run_command("sage rsa_keygenerator.py 1024")
+    # Compute block_size and data_area.
+    block_size, data_area = compute_data_area(1024)
+    print(f"Computed block_size = {block_size}, data_area = {data_area} bytes")
+    
+    # Test messages for Group 1.
+    tests = [
+        ("exact", "X" * data_area),            # Exactly equal to data_area.
+        ("one_smaller", "Y" * (data_area - 1)),  # One byte smaller.
+        ("one_larger", "Z" * (data_area + 1)),   # One byte larger (should split into two blocks).
+        ("very_small", "HelloRSA!X"),           # Very small message (~10 bytes).
+        ("very_large", ''.join(random.choices(string.ascii_letters + string.digits, k=1048576)))  # 1 MB message.
+    ]
+    
+    for label, msg in tests:
+        print(f"\n--- Test: {label} (Message length: {len(msg)} bytes) ---")
+        run_test(msg, label)
+    
+    print("\n=== Group 2: Small Key Size (64 bits) ===")
+    # Run key generation for 64-bit keys.
+    run_command("sage rsa_keygenerator.py 64")
+    # For key_size=64, compute block_size and data_area.
+    block_size_small, data_area_small = compute_data_area(64)
+    print(f"Computed block_size = {block_size_small}, data_area = {data_area_small} bytes")
+    # Use a dummy message.
+    dummy_message = "Test"
+    print("\n--- Test: small_key (Expected to fail encryption/decryption due to insufficient block size) ---")
+    cmd_encrypt = f"sage rsa_encrypt.py message_small_key.txt public_key.csv"
+    # Create dummy message file.
+    with open("message_small_key.txt", "w", encoding="utf-8") as f:
+        f.write(dummy_message)
+    # For key size 64, we expect encryption to fail because data_area will be zero.
+    run_command(cmd_encrypt, expect_error=True)
+    print("Encryption failed as expected for key size 64.")
 
 if __name__ == "__main__":
     main()

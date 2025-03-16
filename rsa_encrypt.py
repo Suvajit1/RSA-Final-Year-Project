@@ -58,7 +58,7 @@ def main():
     
     # Determine block size: ensure m < n.
     block_size = (n.nbits() - 1) // 8
-    print("Block size:", block_size)
+    # print("Block size:", block_size)
     if block_size < 15:
         print("Error: Block size too small for padding requirements.")
         sys.exit(1)
