@@ -16,6 +16,7 @@ Thus, each block has a fixed size = block_size, where:
     block_size = (n.nbits() - 1) // 8
 Each block is then converted to an integer and encrypted.
 The ciphertext file contains one ciphertext integer per line.
+Intermediate steps are printed for demonstration.
 """
 
 from sage.all import *
@@ -57,6 +58,7 @@ def main():
     
     # Determine block size: ensure m < n.
     block_size = (n.nbits() - 1) // 8
+    print("Block size:", block_size)
     if block_size < 15:
         print("Error: Block size too small for padding requirements.")
         sys.exit(1)
@@ -67,7 +69,9 @@ def main():
     
     encrypted_blocks = []
     enc_start_time = time.time()
-    for chunk in chunks:
+    
+    # print("=== Encrypting Blocks ===")
+    for i, chunk in enumerate(chunks):
         L = len(chunk)  # actual message length for this block
         # Header: 1 byte indicating L.
         header = bytes([L])
@@ -84,6 +88,18 @@ def main():
         if len(block_bytes) != block_size:
             print("Error: Block length mismatch. Expected:", block_size, "Got:", len(block_bytes))
             sys.exit(1)
+        
+        # # Print intermediate block details for demonstration.
+        # print(f"\nBlock {i+1}:")
+        # print(" Header (L):", header.hex(), f"-> Actual length = {L}")
+        # print(" Message Chunk:", chunk.hex())
+        # if len(pad_bytes) > 0:
+        #     print(" Padding:", pad_bytes.hex())
+        # else:
+        #     print(" Padding: (none)")
+        # print(" Tail (14 bytes):", tail.hex())
+        # print(" Full Block (hex):", block_bytes.hex())
+        
         # Convert block bytes to integer.
         m_int = Integer(int.from_bytes(block_bytes, byteorder="big"))
         c_int = power_mod(m_int, e, n)
@@ -98,7 +114,7 @@ def main():
             # Write each ciphertext (as an integer) on its own line.
             f.write(f"{int(c)}\n")
     
-    print("Encryption complete.")
+    print("\nEncryption complete.")
     print("Encrypted file:", output_filename)
     print("Time taken to encrypt: {:.6f} seconds".format(enc_end_time - enc_start_time))
 
