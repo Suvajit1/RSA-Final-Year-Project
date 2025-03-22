@@ -52,10 +52,16 @@ def main():
     n = p * q
     phi = (p - 1) * (q - 1)
 
-    # Set e as a prime with bit length equal to the provided bit length.
-    e = generate_prime((bits-1)*2)
-    while gcd(e, phi) != 1:
-        e = next_prime(e)
+    # # Set e as a prime with bit length equal to the provided bit length.
+    # e = generate_prime((bits-1)*2)
+    # while gcd(e, phi) != 1:
+    #     e = next_prime(e)
+    
+    # Choose the public exponent e (65537 is common) and ensure it's coprime with phi.
+    e = 65537
+    if gcd(e, phi) != 1:
+        while gcd(e, phi) != 1:
+            e = next_prime(e)
 
     # Compute private exponent d as the modular inverse of e modulo phi.
     d = inverse_mod(e, phi)
