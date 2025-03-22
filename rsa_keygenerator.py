@@ -57,7 +57,7 @@ def main():
     # while gcd(e, phi) != 1:
     #     e = next_prime(e)
     
-    # Choose the public exponent e (65537 is common) and ensure it's coprime with phi.
+    # Choose the public exponent e (2^16+1 = 65537 is common) and ensure it's coprime with phi.
     e = 65537
     if gcd(e, phi) != 1:
         while gcd(e, phi) != 1:

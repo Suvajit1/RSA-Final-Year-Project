@@ -1,112 +1,35 @@
-sayan@Sayandas:~/rsa_final-year-project$ python3 benchmark_rsa.py
-=== Task 1: Key Generation Benchmarking ===
+RSA Benchmark Results
+==================================================
 
-Generating keys with key size 512 bits...
-Keys generated successfully.
-Public key stored in public_key.csv
-Private key stored in private_key.csv
-Time taken to generate keys: 2.203479 seconds
+Task 1: Key Generation Benchmarking
+--------------------------------------------------
+Key size: 512 bits | Time taken: 2.896343 seconds
+Key size: 768 bits | Time taken: 4.764379 seconds
+Key size: 1024 bits | Time taken: 3.880975 seconds
+Key size: 1280 bits | Time taken: 5.747967 seconds
+Key size: 1536 bits | Time taken: 9.485416 seconds
+Key size: 1792 bits | Time taken: 16.360374 seconds
+Key size: 2048 bits | Time taken: 24.973783 seconds
+Fixed key size: 1024 bits | Time taken: 4.026658 seconds
 
-Generating keys with key size 768 bits...
-Keys generated successfully.
-Public key stored in public_key.csv
-Private key stored in private_key.csv
-Time taken to generate keys: 7.174016 seconds
 
-Generating keys with key size 1024 bits...
-Keys generated successfully.
-Public key stored in public_key.csv
-Private key stored in private_key.csv
-Time taken to generate keys: 17.802368 seconds
+Task 2: Encryption Benchmarking
+--------------------------------------------------
+Message size: 1KB | Encryption time: 1.947177 seconds
+Message size: 10KB | Encryption time: 2.167794 seconds
+Message size: 100KB | Encryption time: 2.029135 seconds
+Message size: 1MB | Encryption time: 2.179470 seconds
+Message size: 10MB | Encryption time: 3.949045 seconds
 
-Generating keys with key size 1280 bits...
-Keys generated successfully.
-Public key stored in public_key.csv
-Private key stored in private_key.csv
-Time taken to generate keys: 41.388035 seconds
 
-Generating keys with key size 1536 bits...
-Keys generated successfully.
-Public key stored in public_key.csv
-Private key stored in private_key.csv
-Time taken to generate keys: 82.129832 seconds
+Task 3: Decryption Benchmarking
+--------------------------------------------------
+Message size: 1KB | Decryption time: 2.400480 seconds
+Message size: 10KB | Decryption time: 2.509997 seconds
+Message size: 100KB | Decryption time: 4.564876 seconds
+Message size: 1MB | Decryption time: 27.636753 seconds
+Message size: 10MB | Decryption time: 330.289343 seconds
 
-Generating keys with key size 1792 bits...
-Keys generated successfully.
-Public key stored in public_key.csv
-Private key stored in private_key.csv
-Time taken to generate keys: 150.935365 seconds
-
-Generating keys with key size 2048 bits...
-Keys generated successfully.
-Public key stored in public_key.csv
-Private key stored in private_key.csv
-Time taken to generate keys: 201.773227 seconds
-
-Re-generating keys with fixed key size 1024 bits for Tasks 2 and 3...
-Keys generated successfully.
-Public key stored in public_key.csv
-Private key stored in private_key.csv
-Time taken to generate keys: 14.371090 seconds
-
-Task 1 complete.
-
-=== Task 2: Encryption Benchmarking ===
-
-Encrypting 1KB message (size: 1024 bytes) from message_1KB.txt ...
-Encryption complete.
-Encrypted file: message_1KB_cipher.txt
-Time taken to encrypt: 0.031645 seconds
-
-Encrypting 10KB message (size: 10240 bytes) from message_10KB.txt ...
-Encryption complete.
-Encrypted file: message_10KB_cipher.txt
-Time taken to encrypt: 0.210363 seconds
-
-Encrypting 100KB message (size: 102400 bytes) from message_100KB.txt ...
-Encryption complete.
-Encrypted file: message_100KB_cipher.txt
-Time taken to encrypt: 2.377612 seconds
-
-Encrypting 1MB message (size: 1048576 bytes) from message_1MB.txt ...
-Encryption complete.
-Encrypted file: message_1MB_cipher.txt
-Time taken to encrypt: 23.320798 seconds
-
-Encrypting 10MB message (size: 10485760 bytes) from message_10MB.txt ...
-Encryption complete.
-Encrypted file: message_10MB_cipher.txt
-Time taken to encrypt: 227.159400 seconds
-
-Task 2 complete.
-
-=== Task 3: Decryption Benchmarking ===
-
-Decrypting ciphertext for 1KB message from message_1KB_cipher.txt ...
-Decryption complete.
-Decrypted file: message_1KB_cipher_decrypted.txt
-Time taken to decrypt: 0.026192 seconds
-
-Decrypting ciphertext for 10KB message from message_10KB_cipher.txt ...
-Decryption complete.
-Decrypted file: message_10KB_cipher_decrypted.txt
-Time taken to decrypt: 0.211575 seconds
-
-Decrypting ciphertext for 100KB message from message_100KB_cipher.txt ...
-Decryption complete.
-Decrypted file: message_100KB_cipher_decrypted.txt
-Time taken to decrypt: 2.045803 seconds
-
-Decrypting ciphertext for 1MB message from message_1MB_cipher.txt ...
-Decryption complete.
-Decrypted file: message_1MB_cipher_decrypted.txt
-Time taken to decrypt: 21.794802 seconds
-
-Decrypting ciphertext for 10MB message from message_10MB_cipher.txt ...
-Decryption complete.
-Decrypted file: message_10MB_cipher_decrypted.txt
-Time taken to decrypt: 265.547616 seconds
-
-Task 3 complete.
 
 Benchmarking completed.
+
