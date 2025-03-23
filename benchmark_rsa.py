@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 benchmark_rsa.py
 ----------------
@@ -25,7 +24,6 @@ Usage:
 
 
 import subprocess
-import os
 import random, string, sys, time
 
 def run_command(cmd):
