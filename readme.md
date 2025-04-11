@@ -11,13 +11,13 @@ This project demonstrates a simple RSA encryption system implemented using SageM
 - **How it works:**
   - Two large prime numbers are generated.
   - These primes are used to calculate:
-    - **Modulus (\(n\)):** Product of the two primes.
-    - **Euler’s Totient (\(\phi(n)\)):** Used for key calculations.
-  - A public exponent (\(e\)) is chosen such that \(\gcd(e, \phi(n)) = 1\).
-  - The private key (\(d\)) is calculated using \(e\) and \(\phi(n)\).
+    - **Modulus (n):** Product of the two primes.
+    - **Euler’s Totient (phi(n)):** Used for key calculations.
+  - A public exponent (e) is chosen such that gcd(e, phi(n)) = 1.
+  - The private key (d) is calculated using e and phi(n).
 - **Output:**
-  - Public key (\(e, n\)) is saved in `public_key.csv`.
-  - Private key (\(d, n\)) is saved in `private_key.csv`.
+  - Public key (e, n) is saved in `public_key.csv`.
+  - Private key (d, n) is saved in `private_key.csv`.
 
 ---
 
@@ -27,10 +27,11 @@ This project demonstrates a simple RSA encryption system implemented using SageM
   - The plaintext is read and converted to UTF-8 encoding.
   - If the message is too long, it is split into smaller blocks.
   - Each block is encrypted using the formula:  
-    \[
-    c = m^e \mod n
-    \]
-    where \(m\) is the block of plaintext, \(e\) is the public exponent, and \(n\) is the modulus.
+    `c = (m^e) mod n`  
+    where:
+    - `m` is the block of plaintext,
+    - `e` is the public exponent,
+    - `n` is the modulus.
 - **Output:**  
   - The encrypted blocks (ciphertext) are saved in a file with `_cipher` appended to the original filename (e.g., `message_cipher.txt`).
 
@@ -41,10 +42,11 @@ This project demonstrates a simple RSA encryption system implemented using SageM
 - **How it works:**
   - The ciphertext file is read (each line contains `block_length` and `ciphertext`).
   - Each block is decrypted using the formula:  
-    \[
-    m = c^d \mod n
-    \]
-    where \(c\) is the ciphertext block, \(d\) is the private exponent, and \(n\) is the modulus.
+    `m = (c^d) mod n`  
+    where:
+    - `c` is the ciphertext block,
+    - `d` is the private exponent,
+    - `n` is the modulus.
   - The decrypted blocks are combined to reconstruct the original plaintext.
 - **Output:**  
   - The plaintext is saved in a file with `_decrypted` appended to the ciphertext filename (e.g., `message_cipher_decrypted.txt`).
