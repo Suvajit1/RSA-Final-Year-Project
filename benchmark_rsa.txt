@@ -1,0 +1,35 @@
+RSA Benchmark Results
+==================================================
+
+Task 1: Key Generation Benchmarking
+--------------------------------------------------
+Key size: 512 bits | Time taken: 2.524158 seconds
+Key size: 768 bits | Time taken: 3.643096 seconds
+Key size: 1024 bits | Time taken: 2.961023 seconds
+Key size: 1280 bits | Time taken: 6.154665 seconds
+Key size: 1536 bits | Time taken: 7.601883 seconds
+Key size: 1792 bits | Time taken: 14.810786 seconds
+Key size: 2048 bits | Time taken: 27.126295 seconds
+Fixed key size: 1024 bits | Time taken: 3.679366 seconds
+
+
+Task 2: Encryption Benchmarking
+--------------------------------------------------
+Message size: 1KB | Encryption time: 1.500558 seconds
+Message size: 10KB | Encryption time: 1.560788 seconds
+Message size: 100KB | Encryption time: 1.547415 seconds
+Message size: 1MB | Encryption time: 1.620163 seconds
+Message size: 10MB | Encryption time: 3.014787 seconds
+
+
+Task 3: Decryption Benchmarking
+--------------------------------------------------
+Message size: 1KB | Decryption time: 1.521123 seconds
+Message size: 10KB | Decryption time: 1.656155 seconds
+Message size: 100KB | Decryption time: 3.467649 seconds
+Message size: 1MB | Decryption time: 22.759017 seconds
+Message size: 10MB | Decryption time: 228.118128 seconds
+
+
+Benchmarking completed.
+
