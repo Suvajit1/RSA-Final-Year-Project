@@ -1,80 +1,137 @@
 # RSA Encryption with SageMath
 
-This project demonstrates a simple RSA encryption system implemented using SageMath. It consists of scripts for key generation, encryption, and decryption, along with a test driver that verifies the entire process.
+This project demonstrates a simple RSA encryption system implemented using SageMath. It includes scripts for generating keys, encrypting messages, decrypting messages, and testing the entire process.
 
-## Project Structure
+---
 
-- **rsa_keygenerator.py**  
-  Generates RSA keys using primes of a specified bit length.  
-  - Two primes are generated and used to compute the modulus \( n \) and Euler’s totient \( \phi(n) \).  
-  - The public exponent \( e \) is chosen as a prime with a bit length equal to half of the provided bit length (and is adjusted if necessary to ensure \(\gcd(e,\phi(n))=1\)).  
-  - The public key \((e, n)\) is stored in `public_key.csv`, and the private key \((d, n)\) is stored in `private_key.csv`.
+## Project Overview
 
-- **rsa_encrypt.py**  
-  Encrypts a plaintext file using RSA and a public key from a CSV file.  
-  - The plaintext is read and encoded in UTF‑8.  
-  - If the message is too long for a single RSA operation, it is split into smaller blocks (each block’s integer value is guaranteed to be less than \( n \)).  
-  - The ciphertext for each block is computed as \( c = m^e \mod n \) and stored in an output file with `_cipher` appended to the original filename.
+### 1. **Key Generation (`rsa_keygenerator.py`)**
+- **Purpose:** Creates RSA public and private keys.
+- **How it works:**
+  - Two large prime numbers are generated.
+  - These primes are used to calculate:
+    - **Modulus (\(n\)):** Product of the two primes.
+    - **Euler’s Totient (\(\phi(n)\)):** Used for key calculations.
+  - A public exponent (\(e\)) is chosen such that \(\gcd(e, \phi(n)) = 1\).
+  - The private key (\(d\)) is calculated using \(e\) and \(\phi(n)\).
+- **Output:**
+  - Public key (\(e, n\)) is saved in `public_key.csv`.
+  - Private key (\(d, n\)) is saved in `private_key.csv`.
 
-- **rsa_decrypt.py**  
-  Decrypts an RSA-encrypted ciphertext file using a private key from a CSV file.  
-  - The ciphertext file (with each line formatted as `block_length,ciphertext`) is read, and each block is decrypted as \( m = c^d \mod n \).  
-  - The decrypted blocks are reassembled into the original plaintext, which is written to an output file with `_decrypted` appended to the ciphertext filename.
+---
 
-- **test_rsa.py**  
-  A test driver that automates the entire process:  
+### 2. **Encryption (`rsa_encrypt.py`)**
+- **Purpose:** Encrypts a plaintext file using the RSA public key.
+- **How it works:**
+  - The plaintext is read and converted to UTF-8 encoding.
+  - If the message is too long, it is split into smaller blocks.
+  - Each block is encrypted using the formula:  
+    \[
+    c = m^e \mod n
+    \]
+    where \(m\) is the block of plaintext, \(e\) is the public exponent, and \(n\) is the modulus.
+- **Output:**  
+  - The encrypted blocks (ciphertext) are saved in a file with `_cipher` appended to the original filename (e.g., `message_cipher.txt`).
+
+---
+
+### 3. **Decryption (`rsa_decrypt.py`)**
+- **Purpose:** Decrypts a ciphertext file using the RSA private key.
+- **How it works:**
+  - The ciphertext file is read (each line contains `block_length` and `ciphertext`).
+  - Each block is decrypted using the formula:  
+    \[
+    m = c^d \mod n
+    \]
+    where \(c\) is the ciphertext block, \(d\) is the private exponent, and \(n\) is the modulus.
+  - The decrypted blocks are combined to reconstruct the original plaintext.
+- **Output:**  
+  - The plaintext is saved in a file with `_decrypted` appended to the ciphertext filename (e.g., `message_cipher_decrypted.txt`).
+
+---
+
+### 4. **Testing (`test_rsa.py`)**
+- **Purpose:** Automates the entire RSA process to verify correctness.
+- **Steps:**
   1. Creates a sample plaintext file.
-  2. Calls `rsa_keygenerator.py` (via Sage) to generate keys.
-  3. Uses `rsa_encrypt.py` (via Sage) to encrypt the sample plaintext.
-  4. Uses `rsa_decrypt.py` (via Sage) to decrypt the ciphertext.
-  5. Compares the original plaintext with the decrypted text and prints a success or failure message.
+  2. Runs `rsa_keygenerator.py` to generate keys.
+  3. Encrypts the sample plaintext using `rsa_encrypt.py`.
+  4. Decrypts the ciphertext using `rsa_decrypt.py`.
+  5. Compares the original plaintext with the decrypted text.
+- **Output:**  
+  - Prints a success message if the decrypted text matches the original, otherwise prints a failure message.
+
+---
 
 ## Prerequisites
 
-- **SageMath:**  
-  Ensure you have SageMath installed. Download it from [sagemath.org](https://www.sagemath.org).  
-  All scripts are designed to be run using SageMath. For example:
+### 1. **SageMath**
+- **Why:** All scripts are designed to run using SageMath.
+- **Download:** [sagemath.org](https://www.sagemath.org)
+- **Example Command:**  
   ```bash
   sage rsa_keygenerator.py 512
   ```
 
-- **Python 3:**  
-  The scripts are written in Python 3. SageMath includes a compatible Python environment, but you must use Sage to run the RSA scripts.
+### 2. **Python 3**
+- **Why:** The scripts are written in Python 3, which is included in SageMath.
 
-## Usage
+---
 
-1. **Generate RSA Keys:**
-   ```bash
-   sage rsa_keygenerator.py <bit_length>
-   ```
-   Example (for 512-bit keys):
-   ```bash
-   sage rsa_keygenerator.py 512
-   ```
-   This creates `public_key.csv` and `private_key.csv`.
+## How to Use
 
-2. **Encrypt a Plaintext File:**
-   ```bash
-   sage rsa_encrypt.py <plaintext_filename> <public_key_csv>
-   ```
-   Example:
-   ```bash
-   sage rsa_encrypt.py message.txt public_key.csv
-   ```
-   The encrypted ciphertext is saved to a file with `_cipher` appended (e.g., `message_cipher.txt`).
+### 1. **Generate RSA Keys**
+- **Command:**  
+  ```bash
+  sage rsa_keygenerator.py <bit_length>
+  ```
+- **Example (512-bit keys):**  
+  ```bash
+  sage rsa_keygenerator.py 512
+  ```
+- **Result:**  
+  - Creates `public_key.csv` and `private_key.csv`.
 
-3. **Decrypt a Ciphertext File:**
-   ```bash
-   sage rsa_decrypt.py <ciphertext_filename> <private_key_csv>
-   ```
-   Example:
-   ```bash
-   sage rsa_decrypt.py message_cipher.txt private_key.csv
-   ```
-   The decrypted plaintext is saved to a file with `_decrypted` appended (e.g., `message_cipher_decrypted.txt`).
+---
 
-4. **Run the Test Script:**
-   ```bash
-   python3 test_rsa.py
-   ```
-   This script runs an end-to-end test by generating keys, encrypting a sample message, decrypting the ciphertext, and verifying that the decrypted text matches the original.
+### 2. **Encrypt a Plaintext File**
+- **Command:**  
+  ```bash
+  sage rsa_encrypt.py <plaintext_filename> <public_key_csv>
+  ```
+- **Example:**  
+  ```bash
+  sage rsa_encrypt.py message.txt public_key.csv
+  ```
+- **Result:**  
+  - Saves the ciphertext in a file with `_cipher` appended (e.g., `message_cipher.txt`).
+
+---
+
+### 3. **Decrypt a Ciphertext File**
+- **Command:**  
+  ```bash
+  sage rsa_decrypt.py <ciphertext_filename> <private_key_csv>
+  ```
+- **Example:**  
+  ```bash
+  sage rsa_decrypt.py message_cipher.txt private_key.csv
+  ```
+- **Result:**  
+  - Saves the decrypted plaintext in a file with `_decrypted` appended (e.g., `message_cipher_decrypted.txt`).
+
+---
+
+### 4. **Run the Test Script**
+- **Command:**  
+  ```bash
+  python3 test_rsa.py
+  ```
+- **What it does:**  
+  - Runs an end-to-end test of the RSA process.
+  - Verifies that the decrypted text matches the original plaintext.
+
+---
+
+This project provides a complete demonstration of RSA encryption and decryption using SageMath, making it easy to understand and test the RSA algorithm in practice.
