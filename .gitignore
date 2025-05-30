@@ -1,5 +1,9 @@
 # Ignore all .txt files
 *.txt
 
+# Ignore all image files
+*.jpg
+*.jpeg
+
 # Ignore all .csv files
 *.csv

@@ -3,32 +3,32 @@ RSA Benchmark Results
 
 Task 1: Key Generation Benchmarking
 --------------------------------------------------
-Key size: 512 bits | Time taken: 2.537531 seconds
-Key size: 768 bits | Time taken: 3.566049 seconds
-Key size: 1024 bits | Time taken: 3.115825 seconds
-Key size: 1280 bits | Time taken: 5.081634 seconds
-Key size: 1536 bits | Time taken: 10.443967 seconds
-Key size: 1792 bits | Time taken: 13.289906 seconds
-Key size: 2048 bits | Time taken: 20.862967 seconds
-Fixed key size: 1024 bits | Time taken: 3.207119 seconds
+Key size: 512 bits | Time taken: 3.199034 seconds
+Key size: 768 bits | Time taken: 4.410424 seconds
+Key size: 1024 bits | Time taken: 3.883738 seconds
+Key size: 1280 bits | Time taken: 5.308469 seconds
+Key size: 1536 bits | Time taken: 9.037816 seconds
+Key size: 1792 bits | Time taken: 13.612243 seconds
+Key size: 2048 bits | Time taken: 24.007475 seconds
+Fixed key size: 1024 bits | Time taken: 4.257379 seconds
 
 
 Task 2: Encryption Benchmarking
 --------------------------------------------------
-Message size: 1KB | Encryption time: 1.486040 seconds
-Message size: 10KB | Encryption time: 1.571901 seconds
-Message size: 100KB | Encryption time: 1.516771 seconds
-Message size: 1MB | Encryption time: 1.669939 seconds
-Message size: 10MB | Encryption time: 3.001235 seconds
+Message size: 1KB | Encryption time: 2.662741 seconds
+Message size: 10KB | Encryption time: 2.386686 seconds
+Message size: 100KB | Encryption time: 2.312491 seconds
+Message size: 1MB | Encryption time: 2.428926 seconds
+Message size: 10MB | Encryption time: 3.939410 seconds
 
 
 Task 3: Decryption Benchmarking
 --------------------------------------------------
-Message size: 1KB | Decryption time: 1.578674 seconds
-Message size: 10KB | Decryption time: 1.650898 seconds
-Message size: 100KB | Decryption time: 3.537789 seconds
-Message size: 1MB | Decryption time: 22.487836 seconds
-Message size: 10MB | Decryption time: 227.986114 seconds
+Message size: 1KB | Decryption time: 2.328892 seconds
+Message size: 10KB | Decryption time: 2.818264 seconds
+Message size: 100KB | Decryption time: 4.567152 seconds
+Message size: 1MB | Decryption time: 22.877191 seconds
+Message size: 10MB | Decryption time: 210.151243 seconds
 
 
 Benchmarking completed.

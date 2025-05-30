@@ -88,6 +88,9 @@ def run_test(message_text, test_label):
     # Compare the original and decrypted messages.
     with open(message_filename, "r", encoding="utf-8") as f:
         original = f.read()
+    if not os.path.exists(decrypted_filename):
+        print(f"ERROR: Decrypted file '{decrypted_filename}' was not created.")
+        sys.exit(1)
     with open(decrypted_filename, "r", encoding="utf-8") as f:
         decrypted = f.read()
     

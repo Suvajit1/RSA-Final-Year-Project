@@ -72,13 +72,15 @@ def main():
         print(f"       Calculated block_size based on key: {block_size} bytes.")
         sys.exit(1)
     data_size = block_size - 15  # available bytes for actual data in each block
-    
-    # Split input_bytes into chunks of size <= data_size.
-    chunks = [input_bytes[i:i+data_size] for i in range(0, len(input_bytes), data_size)]
+
+    # Ensure each chunk fits in one byte for length (max 255)
+    max_chunk_size = min(data_size, 255)
+    # Split input_bytes into chunks of size <= max_chunk_size.
+    chunks = [input_bytes[i:i+max_chunk_size] for i in range(0, len(input_bytes), max_chunk_size)]
     
     encrypted_blocks = []
     enc_start_time = time.time()
-    
+
     # print("=== Encrypting Blocks ===") # Kept commented
     for i, chunk in enumerate(chunks):
         L = len(chunk)  # actual data length for this block
