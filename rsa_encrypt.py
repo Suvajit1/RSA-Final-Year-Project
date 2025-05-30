@@ -75,6 +75,10 @@ def main():
 
     # Ensure each chunk fits in one byte for length (max 255)
     max_chunk_size = min(data_size, 255)
+    if max_chunk_size < 1:
+        print("Error: Block size too small for any data (max_chunk_size < 1).")
+        print("       This usually means the key size is too small for the required padding.")
+        sys.exit(1)
     # Split input_bytes into chunks of size <= max_chunk_size.
     chunks = [input_bytes[i:i+max_chunk_size] for i in range(0, len(input_bytes), max_chunk_size)]
     

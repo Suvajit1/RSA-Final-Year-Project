@@ -120,8 +120,13 @@ def main():
     
     for label, msg in tests:
         print(f"\n--- Test: {label} (Message length: {len(msg)} bytes) ---")
-        run_test(msg, label)
-    
+        try:
+            run_test(msg, label)
+        except SystemExit as e:
+            print(f"Test '{label}' failed with exit code {e}. Continuing to next test.")
+        except Exception as e:
+            print(f"Test '{label}' raised an unexpected exception: {e}. Continuing to next test.")
+
     print("\n=== Group 2: Small Key Size (64 bits) ===")
     # Run key generation for 64-bit keys.
     run_command("sage rsa_keygenerator.py 64")
@@ -136,8 +141,14 @@ def main():
     with open("message_small_key.txt", "w", encoding="utf-8") as f:
         f.write(dummy_message)
     # For key size 64, we expect encryption to fail because data_area will be zero.
-    run_command(cmd_encrypt, expect_error=True)
-    print("Encryption failed as expected for key size 64.")
+    result = run_command(cmd_encrypt, expect_error=True)
+    # Check if ciphertext file was created (should not be)
+    base, ext = os.path.splitext("message_small_key.txt")
+    ciphertext_filename = f"{base}_cipher{ext}" if ext else f"message_small_key.txt_cipher"
+    if os.path.exists(ciphertext_filename):
+        print(f"ERROR: Ciphertext file '{ciphertext_filename}' was created unexpectedly.")
+    else:
+        print("Encryption failed as expected for key size 64.")
 
 if __name__ == "__main__":
     main()
