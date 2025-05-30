@@ -148,8 +148,44 @@ def run_sage_script(script_name, script_args, cwd, operation_name="SageMath Scri
         return False, "", str(e)
 
 # --- Sidebar Content ---
-st.sidebar.title("RSA Cryptography Tool")
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Sagemath_logo.svg/1200px-Sagemath_logo.svg.png", width=100) # Added SageMath logo
+# Display University Logo at the top of the sidebar, centered
+logo_path = os.path.join(APP_SCRIPT_DIR, "univ-logo.png") 
+if os.path.exists(logo_path):
+    try:
+        with open(logo_path, "rb") as f:
+            img_bytes = f.read()
+        img_b64 = base64.b64encode(img_bytes).decode()
+        
+        # HTML to center the image. You can adjust the width.
+        # Using display: flex and justify-content: center on a wrapper div.
+        logo_html = f"""
+            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                <img src="data:image/png;base64,{img_b64}" alt="University Logo" width="100">
+            </div>"""
+        st.sidebar.markdown(logo_html, unsafe_allow_html=True)
+    except Exception as e:
+        st.sidebar.warning(f"Could not display logo: {e}")
+else:
+    st.sidebar.warning("University logo ('univ-logo.png') not found in the application directory.")
+
+# st.sidebar.markdown("---") 
+
+st.sidebar.title("RSA Cryptography Tool") # You can keep this title or remove it if the project info is enough
+
+st.sidebar.markdown("### Final Year Project (Group 27)")
+st.sidebar.markdown("#### Bachelor of Engineering in Information Technology")
+st.sidebar.markdown("Jadavpur University, Salt Lake Campus") # Added University name
+st.sidebar.markdown("Session: 2024-2025") # Added session
+
+st.sidebar.markdown("---") # Separator
+
+st.sidebar.markdown("##### By:")
+st.sidebar.markdown("- **Sayan Das** (302211001006)")
+st.sidebar.markdown("- **Saugata Ghosh** (302211001007)")
+st.sidebar.markdown("- **Suvajit Sadhukhan** (302211001005)")
+st.sidebar.markdown("- **Subhankar Das** (002111001147)")
+
+st.sidebar.markdown("---") # Separator
 
 with st.sidebar.expander("About This Application", expanded=False):
     st.markdown("""
@@ -413,76 +449,45 @@ with st.expander("Step 4: Verify Decryption (Compare Files)"):
                     st.markdown(f"**Preview of: `{uploaded_file.name}`**")
                     file_type = uploaded_file.type
                     
-                    preview_successful = False
-                    if file_type: # Check if MIME type is available
-                        if file_type.startswith("image/"):
+                    preview_rendered = False # Flag to track if a preview was successfully rendered
+
+                    if file_type:
+                        # --- Image Preview ---
+                        if file_type.startswith("image/"): # e.g., image/png, image/jpeg, image/gif
                             try:
-                                column.image(file_bytes, use_container_width=True) 
-                                preview_successful = True
-                            except Exception as e:
-                                column.warning(f"Could not display image preview: {e}")
-                        elif file_type == "application/pdf":
-                            try:
-                                import base64 
-                                base64_pdf = base64.b64encode(file_bytes).decode('utf-8')
-                                pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="400px" type="application/pdf" style="border: none;"></iframe>'
-                                column.markdown(pdf_display, unsafe_allow_html=True)
-                                preview_successful = True
-                            except Exception as e:
-                                column.warning(f"Could not display PDF preview: {e}")
-                        elif file_type.startswith("text/"): # Covers text/plain, text/csv, text/html, etc.
+                                column.image(file_bytes, use_container_width=True)
+                                preview_rendered = True
+                            except Exception: # Catch any exception during image rendering
+                                # Silently fail image preview, will fall to "Preview not available"
+                                pass
+                        
+                        # --- Plain Text Preview ---
+                        elif file_type == "text/plain":
                             try:
                                 text_content = ""
-                                # Try common encodings
-                                for encoding in ['utf-8', 'latin-1', 'ascii', 'utf-16', 'utf-32']:
+                                # Try common encodings for plain text
+                                for encoding in ['utf-8', 'ascii', 'latin-1']:
                                     try:
                                         text_content = file_bytes.decode(encoding)
                                         break 
                                     except UnicodeDecodeError:
                                         continue
-                                    
+                                
                                 if text_content:
-                                    # CORRECTED KEY: Use uploaded_file.file_id
-                                    # Also ensure file_label is part of key if two text files could be shown
                                     unique_key = f"text_preview_{uploaded_file.file_id}_{file_label.lower().replace(' ', '_')}"
-                                    if file_type == "text/html":
-                                        column.markdown(text_content, unsafe_allow_html=True) # Render HTML
-                                    elif file_type == "text/markdown" or file_type == "text/x-markdown":
-                                        column.markdown(text_content) # Render Markdown
-                                    elif file_type == "text/csv":
-                                        import pandas as pd
-                                        from io import StringIO
-                                        try:
-                                            df = pd.read_csv(StringIO(text_content))
-                                            column.dataframe(df)
-                                        except Exception as e_csv:
-                                            column.warning(f"Could not parse CSV: {e_csv}. Displaying as plain text.")
-                                            column.text_area(f"Text Content", value=text_content, height=300, disabled=True, key=unique_key)
-                                    else: # Default to text_area for other text/* types
-                                        column.text_area(f"Text Content", value=text_content, height=300, disabled=True, key=unique_key)
-                                    preview_successful = True
-                                else:
-                                    column.info("Could not decode text content with common encodings.")
-                            except Exception as e:
-                                column.warning(f"Could not display text preview: {e}")
-                        elif file_type.startswith("audio/"):
-                            try:
-                                column.audio(file_bytes, format=file_type)
-                                preview_successful = True
-                            except Exception as e:
-                                column.warning(f"Could not display audio preview: {e}")
-                        elif file_type.startswith("video/"):
-                            try:
-                                column.video(file_bytes, format=file_type)
-                                preview_successful = True
-                            except Exception as e:
-                                column.warning(f"Could not display video preview: {e}")
-                        # Add more specific handlers above this else if needed
+                                    column.text_area(f"Text Content", value=text_content, height=200, disabled=True, key=unique_key)
+                                    preview_rendered = True
+                                # If decoding fails with all common encodings, it will fall through
+                            except Exception: # Catch any other exception during text processing
+                                # Silently fail text preview
+                                pass
                         
-                    if not preview_successful:
-                        # Fallback for unknown or unhandled types, or if MIME type is missing
-                        column.info(f"Preview not available for `{uploaded_file.name}` (Type: `{file_type if file_type else 'Unknown'}`).")
-                        column.caption(f"Size: {len(file_bytes):,} bytes")
+                        # For any other file type, preview_rendered will remain False
+                    
+                    # --- Fallback if no preview was rendered ---
+                    if not preview_rendered:
+                        column.info(f"Preview not available for this file type (`{file_type if file_type else 'Unknown'}`).")
+                        column.caption(f"Filename: `{uploaded_file.name}`, Size: {len(file_bytes):,} bytes")
 
 
             display_preview(preview_col1, file1_compare, bytes1, "File1")
