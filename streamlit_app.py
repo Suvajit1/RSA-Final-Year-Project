@@ -58,11 +58,16 @@ import subprocess
 import os
 import tempfile
 import uuid
-import shutil
+import base64 
+# shutil is not explicitly used in the latest version of the main app logic,
+# but it's good to keep if you might add features like cleaning up old session dirs.
+import shutil 
 
 # --- Configuration ---
-SAGE_EXECUTABLE = "sage"
+SAGE_EXECUTABLE = "sage" # Ensure 'sage' is in PATH in the deployment environment
 BASE_TEMP_DIR = os.path.join(tempfile.gettempdir(), "st_rsa_app_workspace")
+# APP_SCRIPT_DIR should point to where your rsa_*.py scripts are located.
+# If streamlit_app.py is in 'src' and rsa_*.py are also in 'src', this is correct.
 APP_SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 KEYGEN_SCRIPT_NAME = "rsa_keygenerator.py"
@@ -71,7 +76,7 @@ DECRYPT_SCRIPT_NAME = "rsa_decrypt.py"
 
 st.set_page_config(layout="wide", page_title="RSA Workflow with SageMath")
 
-# --- Initialize Session State (Simplified - no logs) ---
+# --- Initialize Session State ---
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 if 'key_gen_public_key_path' not in st.session_state:
@@ -85,63 +90,79 @@ if 'decrypt_output_plain_path' not in st.session_state:
 
 # --- Helper Functions ---
 def get_session_dir():
+    """Creates and returns the path to the current session's temporary directory."""
     path = os.path.join(BASE_TEMP_DIR, st.session_state.session_id)
     os.makedirs(path, exist_ok=True)
     return path
 
 def run_sage_script(script_name, script_args, cwd, operation_name="SageMath Script"):
+    """
+    Runs a SageMath script as a subprocess and returns its success status, stdout, and stderr.
+    `script_args` should be a list of string arguments for the script.
+    Filenames with spaces in `script_args` are handled correctly by subprocess.run
+    when `cmd` is a list.
+    """
     script_abs_path = os.path.join(APP_SCRIPT_DIR, script_name)
     cmd = [SAGE_EXECUTABLE, script_abs_path] + script_args
-    st.info(f"Running {operation_name}: `{' '.join(cmd)}` (in directory: {cwd})") # Use st.info for user feedback
+    
+    # For display, show quotes around arguments if they contain spaces for clarity,
+    # but subprocess.run receives them as distinct list items.
+    display_cmd_args = [f"'{arg}'" if " " in arg else arg for arg in script_args]
+    display_cmd_str = f"`{SAGE_EXECUTABLE} {script_abs_path} {' '.join(display_cmd_args)}`"
+    st.info(f"Running {operation_name}: {display_cmd_str} (in directory: `{cwd}`)")
     
     try:
-        process = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=300) 
-        stdout_clean = process.stdout.strip()
-        stderr_clean = process.stderr.strip()
+        # Set shell=False (default and recommended for security when cmd is a list)
+        process = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=360) # Increased timeout slightly
+        stdout_clean = process.stdout.strip() if process.stdout else ""
+        stderr_clean = process.stderr.strip() if process.stderr else ""
 
-        if stdout_clean: 
-            # For debugging, you might want to see script's stdout.
-            # For user, usually only success/error messages from the script are key.
-            # Example: st.text(f"{operation_name} STDOUT:\n{stdout_clean}") 
-            pass
+        if stdout_clean:
+            # st.text_area(f"{operation_name} STDOUT:", value=stdout_clean, height=100) # Optional: Display full stdout
+            pass 
         if stderr_clean: 
-            st.warning(f"{operation_name} STDERR:\n{stderr_clean}")
+            st.warning(f"{operation_name} STDERR:\n```\n{stderr_clean}\n```")
             
         if process.returncode == 0:
+            # Even with return code 0, scripts might print "Error:" to stdout/stderr
             if "Error:" in stdout_clean or "Error:" in stderr_clean:
-                 st.warning(f"{operation_name} seems to have an issue despite exiting successfully. Review output if any.")
-            # else:
-                 # No explicit "completed successfully" log here, st.success in button handler is enough
+                 st.warning(f"{operation_name} completed with exit code 0, but an 'Error:' message was found in its output. Please review.")
             return True, stdout_clean, stderr_clean
         else:
-            st.error(f"{operation_name} failed. Return code: {process.returncode}. Check STDERR above if any.")
+            st.error(f"{operation_name} failed. Return code: {process.returncode}.")
+            if not stderr_clean and stdout_clean : # If error but no stderr, show stdout
+                 st.info(f"Output from failed script ({operation_name}):\n```\n{stdout_clean}\n```")
             return False, stdout_clean, stderr_clean
             
     except subprocess.TimeoutExpired:
-        st.error(f"{operation_name} timed out after 5 minutes.")
+        st.error(f"{operation_name} timed out after 6 minutes.")
         return False, "", "ProcessTimedOut"
     except FileNotFoundError:
-        errmsg = f"SAGE EXECUTABLE ('{SAGE_EXECUTABLE}') NOT FOUND. Ensure SageMath is installed and '{SAGE_EXECUTABLE}' is in your system's PATH."
+        errmsg = (f"SAGE EXECUTABLE ('{SAGE_EXECUTABLE}') or SCRIPT ('{script_abs_path}') NOT FOUND. "
+                  f"Ensure SageMath is installed, '{SAGE_EXECUTABLE}' is in your system's PATH, "
+                  f"and the script exists at the expected location.")
         st.error(errmsg)
-        return False, "", "SageNotFound"
+        return False, "", "SageOrScriptNotFound"
     except Exception as e:
-        st.error(f"An unexpected Python error occurred while running {operation_name}: {str(e)}")
+        st.error(f"An unexpected Python error occurred while preparing to run or running {operation_name}: {str(e)}")
         return False, "", str(e)
 
 # --- Sidebar Content ---
 st.sidebar.title("RSA Cryptography Tool")
+st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Sagemath_logo.svg/1200px-Sagemath_logo.svg.png", width=100) # Added SageMath logo
 
 with st.sidebar.expander("About This Application", expanded=False):
     st.markdown("""
     This web application demonstrates a complete RSA (Rivest-Shamir-Adleman) cryptographic workflow. 
     It allows you to:
     1.  **Generate** RSA public and private key pairs.
-    2.  **Encrypt** messages using a public key.
+    2.  **Encrypt** arbitrary files using a public key.
     3.  **Decrypt** ciphertexts using the corresponding private key.
-    4.  **Compare** text files (e.g., to verify decryption).
+    4.  **Compare** files byte-by-byte (e.g., to verify decryption).
 
-    All cryptographic operations are performed using SageMath scripts which are called by this Streamlit application.
+    All cryptographic operations are performed using SageMath scripts executed by this Streamlit application.
     Temporary files generated during operations are stored in a session-specific directory.
+    This project is part of a Final Year Project for Bachelor of Engineering in Information Technology.
     """)
 
 with st.sidebar.expander("How to Use", expanded=False):
@@ -149,49 +170,49 @@ with st.sidebar.expander("How to Use", expanded=False):
     Follow these steps through the application:
 
     **Step 1: Generate RSA Keys**
-    *   Enter a "Bit Length" for the prime numbers (p and q). Common values are 256, 512, 1024. Larger bit lengths offer stronger security but result in slower key generation and cryptographic operations.
+    *   Enter a "Bit Length" for the prime numbers (p and q). Common values are 256, 512, 1024. Larger bit lengths offer stronger security but result in slower operations. The padding scheme requires a minimum key size that results in a block size of at least 15 bytes.
     *   Click "Generate Keys".
-    *   Once completed, download buttons for `public_key.csv` and `private_key.csv` will appear. Download these files to your system.
-    *   **Important:** Keep your `private_key.csv` secure and confidential!
+    *   Download `public_key.csv` and `private_key.csv`. **Keep `private_key.csv` secure!**
 
-    **Step 2: Encrypt Message**
-    *   Upload your plaintext message file (typically a `.txt` file).
-    *   Upload the `public_key.csv` that you generated and downloaded in Step 1.
-    *   Click "Encrypt Message".
-    *   After encryption, a download button for the ciphertext file (e.g., `message_cipher.txt`) will appear. Download this encrypted file.
+    **Step 2: Encrypt File**
+    *   Upload any file you want to encrypt.
+    *   Upload the `public_key.csv` generated in Step 1.
+    *   Click "Encrypt File".
+    *   Download the encrypted file (e.g., `yourfile_cipher.ext`).
 
-    **Step 3: Decrypt Message**
-    *   Upload the ciphertext file (e.g., `message_cipher.txt`) obtained from Step 2.
-    *   Upload the `private_key.csv` that corresponds to the public key used for the original encryption.
-    *   Click "Decrypt Message".
-    *   If successful, a download button for the decrypted plaintext file will become available. Download it.
+    **Step 3: Decrypt File**
+    *   Upload the encrypted file (e.g., `yourfile_cipher.ext`) from Step 2.
+    *   Upload the corresponding `private_key.csv`.
+    *   Click "Decrypt File".
+    *   Download the decrypted file (e.g., `yourfile_decrypted.ext`).
 
-    **Step 4: Compare Two Text Files**
-    *   This step allows you to compare the content of any two text files.
-    *   Upload the first text file (e.g., your original message).
-    *   Upload the second text file (e.g., the decrypted message from Step 3).
-    *   Click "Compare Files". The application will display the content of both files side-by-side and indicate whether they are identical.
+    **Step 4: Compare Files**
+    *   Upload two files (e.g., your original file and the decrypted file).
+    *   Click "Compare Files". The application will indicate if they are identical byte-by-byte.
     """)
 
 # --- Main Application UI ---
-st.title("RSA Key Generation, Encryption, and Decryption Workflow")
-session_temp_dir = get_session_dir()
+st.title("RSA File Encryption & Decryption Workflow with SageMath")
+session_temp_dir = get_session_dir() # Ensures session directory exists
 
 # --- 1. Key Generation ---
 with st.expander("Step 1: Generate RSA Keys", expanded=True):
     bit_length_keygen = st.number_input(
-        "Enter Bit Length for Primes (e.g., 256, 512, 1024):", 
-        min_value=64, max_value=4096, value=512, step=64, 
+        "Enter Bit Length for Primes (e.g., 512, 1024, 2048):", 
+        min_value=128, max_value=4096, value=512, step=128, # Min value adjusted for padding
         key="keygen_bits",
-        help="This bit length is for p and q. The modulus n will be roughly twice this length."
+        help="This bit length is for p and q. The modulus n will be roughly twice this length. Minimum effective key size depends on padding requirements (block size >= 15 bytes)."
     )
     
-    cols_keygen_button_outer = st.columns([1,1,1]) 
+    cols_keygen_button_outer = st.columns([1,1.5,1]) # Adjusted for better button centering
     with cols_keygen_button_outer[1]:
         if st.button("Generate Keys", key="keygen_button", type="primary", use_container_width=True):
             keygen_op_dir = os.path.join(session_temp_dir, "key_generation")
             os.makedirs(keygen_op_dir, exist_ok=True)
             
+            st.session_state.key_gen_public_key_path = None # Reset paths
+            st.session_state.key_gen_private_key_path = None
+
             success, stdout, _ = run_sage_script(
                 KEYGEN_SCRIPT_NAME, [str(bit_length_keygen)], cwd=keygen_op_dir, operation_name="RSA Key Generation"
             )
@@ -203,14 +224,9 @@ with st.expander("Step 1: Generate RSA Keys", expanded=True):
                     st.session_state.key_gen_private_key_path = priv_key_path
                     st.success("RSA keys generated successfully!")
                 else:
-                    st.error("Key files not found after generation. Check script output if any.")
-                    st.session_state.key_gen_public_key_path = None
-                    st.session_state.key_gen_private_key_path = None
-            else:
-                st.session_state.key_gen_public_key_path = None
-                st.session_state.key_gen_private_key_path = None
-                if success and "Keys generated successfully." not in stdout:
-                     st.warning("Key generation script finished but success message not found in its output.")
+                    st.error("Key files not found after script execution. Check script output for details.")
+            elif success: # Script succeeded but didn't output expected message
+                 st.warning("Key generation script finished, but the expected success message was not found. Please check script output if keys are not available.")
 
     dl_col1_outer, dl_col2_outer = st.columns(2)
     with dl_col1_outer:
@@ -221,8 +237,7 @@ with st.expander("Step 1: Generate RSA Keys", expanded=True):
                     label="Download Public Key (public_key.csv)", data=fp, file_name="public_key.csv",
                     mime="text/csv", key="download_pub_key_button", type="secondary", use_container_width=True
                 )
-        else:
-            dl_subcol1_center.empty() 
+        # else: dl_subcol1_center.empty() # Keep placeholder to maintain layout if no button
             
     with dl_col2_outer:
         dl_subcol2_center = st.columns([1,2,1])[1] 
@@ -232,191 +247,246 @@ with st.expander("Step 1: Generate RSA Keys", expanded=True):
                     label="Download Private Key (private_key.csv)", data=fp, file_name="private_key.csv",
                     mime="text/csv", key="download_priv_key_button", type="secondary", use_container_width=True
                 )
-        else:
-            dl_subcol2_center.empty()
-
+        # else: dl_subcol2_center.empty()
 
 # --- 2. Encryption ---
-with st.expander("Step 2: Encrypt Message"):
-    uploaded_message_encrypt = st.file_uploader("Upload Plaintext Message File (e.g., message.txt):", type=['txt'], key="encrypt_msg_upload")
-    uploaded_public_key_encrypt = st.file_uploader("Upload Public Key File (public_key.csv from Step 1):", type=['csv'], key="encrypt_pubkey_upload")
+with st.expander("Step 2: Encrypt File"):
+    uploaded_file_encrypt = st.file_uploader( # Renamed for clarity
+        "Upload File to Encrypt (any type):",
+        type=None,
+        key="encrypt_file_upload"
+    )
+    uploaded_public_key_encrypt = st.file_uploader("Upload Public Key File (`public_key.csv`):", type=['csv'], key="encrypt_pubkey_upload")
 
-    cols_encrypt_button_outer = st.columns([1,1,1]) 
+    cols_encrypt_button_outer = st.columns([1,1.5,1]) 
     with cols_encrypt_button_outer[1]:
-        if st.button("Encrypt Message", key="encrypt_button", type="primary", use_container_width=True):
-            if uploaded_message_encrypt and uploaded_public_key_encrypt:
+        if st.button("Encrypt File", key="encrypt_button", type="primary", use_container_width=True):
+            if uploaded_file_encrypt and uploaded_public_key_encrypt:
                 encrypt_op_dir = os.path.join(session_temp_dir, "encryption")
                 os.makedirs(encrypt_op_dir, exist_ok=True)
+                st.session_state.encrypt_output_cipher_path = None # Reset
+
+                # Save the uploaded file with its original name to the temp directory
+                # The script_input_filename will be passed to the Sage script
+                script_input_filename = uploaded_file_encrypt.name
+                temp_input_file_path = os.path.join(encrypt_op_dir, script_input_filename)
                 
-                message_bytes = uploaded_message_encrypt.getvalue()
-                script_input_plaintext_name = "message_to_encrypt.txt" 
-                with open(os.path.join(encrypt_op_dir, script_input_plaintext_name), "wb") as f: f.write(message_bytes)
-                with open(os.path.join(encrypt_op_dir, "public_key_for_encrypt.csv"), "wb") as f: f.write(uploaded_public_key_encrypt.getvalue())
+                with open(temp_input_file_path, "wb") as f:
+                    f.write(uploaded_file_encrypt.getvalue())
+                with open(os.path.join(encrypt_op_dir, "public_key_for_encrypt.csv"), "wb") as f:
+                    f.write(uploaded_public_key_encrypt.getvalue())
 
                 success, stdout, _ = run_sage_script(
-                    ENCRYPT_SCRIPT_NAME, [script_input_plaintext_name, "public_key_for_encrypt.csv"],
-                    cwd=encrypt_op_dir, operation_name="RSA Encryption"
+                    ENCRYPT_SCRIPT_NAME, 
+                    [script_input_filename, "public_key_for_encrypt.csv"], # Pass original filename
+                    cwd=encrypt_op_dir, 
+                    operation_name="RSA File Encryption"
                 )
                 if success and "Encryption complete." in stdout:
-                    output_filename_from_log = next((line.split("Encrypted file:",1)[1].strip() for line in stdout.splitlines() if "Encrypted file:" in line), None)
-                    cipher_file_path = os.path.join(encrypt_op_dir, output_filename_from_log) if output_filename_from_log else os.path.join(encrypt_op_dir, f"{os.path.splitext(script_input_plaintext_name)[0]}_cipher{os.path.splitext(script_input_plaintext_name)[1]}")
-
-                    if os.path.exists(cipher_file_path):
-                        st.session_state.encrypt_output_cipher_path = cipher_file_path
-                        st.success(f"Message encrypted successfully! Ciphertext file: {os.path.basename(cipher_file_path)}")
+                    # Script should print "Encrypted file: <name_of_cipher_file>"
+                    cipher_filename_from_log = next((line.split("Encrypted file:",1)[1].strip() for line in stdout.splitlines() if "Encrypted file:" in line), None)
+                    
+                    if cipher_filename_from_log:
+                        cipher_file_path = os.path.join(encrypt_op_dir, cipher_filename_from_log)
+                        if os.path.exists(cipher_file_path):
+                            st.session_state.encrypt_output_cipher_path = cipher_file_path
+                            st.success(f"File encrypted successfully! Ciphertext file: `{os.path.basename(cipher_file_path)}`")
+                        else:
+                            st.error(f"Ciphertext file '{cipher_filename_from_log}' reported by script but not found in '{encrypt_op_dir}'.")
                     else:
-                        st.error(f"Ciphertext file '{os.path.basename(cipher_file_path)}' not found after script execution.")
-                        st.session_state.encrypt_output_cipher_path = None
-                else:
-                    st.session_state.encrypt_output_cipher_path = None
-                    if success: st.warning("Encryption script finished but success message not found in output.")
+                        st.error("Encryption script completed, but ciphertext filename was not found in its output.")
+                elif success:
+                     st.warning("Encryption script finished, but the expected success message or filename was not found. Please check output.")
             else:
-                st.warning("Please upload both a message file and a public key file for encryption.")
+                st.warning("Please upload both a file to encrypt and a public key file.")
 
-    cols_enc_download_outer = st.columns([1,1,1]) 
+    cols_enc_download_outer = st.columns([1,1.5,1]) 
     with cols_enc_download_outer[1]:
         if st.session_state.get('encrypt_output_cipher_path') and os.path.exists(st.session_state.encrypt_output_cipher_path):
-            download_fn_enc = f"{os.path.splitext(uploaded_message_encrypt.name)[0]}_cipher{os.path.splitext(uploaded_message_encrypt.name)[1]}" if uploaded_message_encrypt else "message_cipher.txt"
+            download_fn_enc = os.path.basename(st.session_state.encrypt_output_cipher_path)
             with open(st.session_state.encrypt_output_cipher_path, "rb") as fp:
                 st.download_button(
-                    label=f"Download Encrypted File", data=fp, file_name=download_fn_enc,
-                    mime="text/plain", key="download_cipher_button", type="secondary", use_container_width=True
+                    label=f"Download Encrypted File", 
+                    data=fp, 
+                    file_name=download_fn_enc, # Use filename from script
+                    mime="text/plain", # Ciphertext is lines of numbers
+                    key="download_cipher_button", type="secondary", use_container_width=True
                 )
-        else:
-            st.empty()
-
+        # else: st.empty()
 
 # --- 3. Decryption ---
-with st.expander("Step 3: Decrypt Message"):
+with st.expander("Step 3: Decrypt File"):
     uploaded_cipher_decrypt = st.file_uploader(
-        "Upload Ciphertext File (e.g., message_cipher.txt):", type=None, key="decrypt_cipher_upload"
+        "Upload Encrypted File (e.g., `filename_cipher.ext`):", 
+        type=None, # Allow any, but expect text file of numbers
+        key="decrypt_cipher_upload"
     )
-    uploaded_private_key_decrypt = st.file_uploader("Upload Private Key File (private_key.csv from Step 1):", type=['csv'], key="decrypt_privkey_upload")
+    uploaded_private_key_decrypt = st.file_uploader("Upload Private Key File (`private_key.csv`):", type=['csv'], key="decrypt_privkey_upload")
 
-    cols_decrypt_button_outer = st.columns([1,1,1]) 
+    cols_decrypt_button_outer = st.columns([1,1.5,1]) 
     with cols_decrypt_button_outer[1]:
-        if st.button("Decrypt Message", key="decrypt_button", type="primary", use_container_width=True):
+        if st.button("Decrypt File", key="decrypt_button", type="primary", use_container_width=True):
             if uploaded_cipher_decrypt and uploaded_private_key_decrypt:
                 decrypt_op_dir = os.path.join(session_temp_dir, "decryption")
                 os.makedirs(decrypt_op_dir, exist_ok=True)
+                st.session_state.decrypt_output_plain_path = None # Reset
 
-                script_input_cipher_name = "cipher_to_decrypt.txt" 
-                with open(os.path.join(decrypt_op_dir, script_input_cipher_name), "wb") as f: f.write(uploaded_cipher_decrypt.getvalue())
-                with open(os.path.join(decrypt_op_dir, "private_key_for_decrypt.csv"), "wb") as f: f.write(uploaded_private_key_decrypt.getvalue())
+                # Save uploaded cipher file with its original name
+                script_input_cipher_name = uploaded_cipher_decrypt.name
+                temp_cipher_file_path = os.path.join(decrypt_op_dir, script_input_cipher_name)
+
+                with open(temp_cipher_file_path, "wb") as f:
+                    f.write(uploaded_cipher_decrypt.getvalue())
+                with open(os.path.join(decrypt_op_dir, "private_key_for_decrypt.csv"), "wb") as f:
+                    f.write(uploaded_private_key_decrypt.getvalue())
                 
                 success, stdout, _ = run_sage_script(
-                    DECRYPT_SCRIPT_NAME, [script_input_cipher_name, "private_key_for_decrypt.csv"],
-                    cwd=decrypt_op_dir, operation_name="RSA Decryption"
+                    DECRYPT_SCRIPT_NAME, 
+                    [script_input_cipher_name, "private_key_for_decrypt.csv"], 
+                    cwd=decrypt_op_dir, 
+                    operation_name="RSA File Decryption"
                 )
                 if success and "Decryption complete." in stdout:
-                    output_filename_from_log = next((line.split("Decrypted file:",1)[1].strip() for line in stdout.splitlines() if "Decrypted file:" in line), None)
-                    decrypted_file_path = os.path.join(decrypt_op_dir, output_filename_from_log) if output_filename_from_log else os.path.join(decrypt_op_dir, f"{os.path.splitext(script_input_cipher_name)[0]}_decrypted{os.path.splitext(script_input_cipher_name)[1]}")
-
-                    if os.path.exists(decrypted_file_path):
-                        st.session_state.decrypt_output_plain_path = decrypted_file_path
-                        st.success(f"Message decrypted successfully! Decrypted file: {os.path.basename(decrypted_file_path)}")
+                    decrypted_filename_from_log = next((line.split("Decrypted file:",1)[1].strip() for line in stdout.splitlines() if "Decrypted file:" in line), None)
+                    
+                    if decrypted_filename_from_log:
+                        decrypted_file_path = os.path.join(decrypt_op_dir, decrypted_filename_from_log)
+                        if os.path.exists(decrypted_file_path):
+                            st.session_state.decrypt_output_plain_path = decrypted_file_path
+                            st.success(f"File decrypted successfully! Decrypted file: `{os.path.basename(decrypted_file_path)}`")
+                        else:
+                            st.error(f"Decrypted file '{decrypted_filename_from_log}' reported by script but not found in '{decrypt_op_dir}'.")
                     else:
-                        st.error(f"Decrypted file '{os.path.basename(decrypted_file_path)}' not found after script execution.")
-                        st.session_state.decrypt_output_plain_path = None
-                else:
-                    st.session_state.decrypt_output_plain_path = None
-                    if success: st.warning("Decryption script finished but success message not found in output.")
+                        st.error("Decryption script completed, but decrypted filename was not found in its output.")
+                elif success:
+                    st.warning("Decryption script finished, but the expected success message or filename was not found. Please check output.")
             else:
-                st.warning("Please upload both a ciphertext file and a private key file for decryption.")
+                st.warning("Please upload both an encrypted file and a private key file.")
 
-    cols_dec_download_outer = st.columns([1,1,1]) 
+    cols_dec_download_outer = st.columns([1,1.5,1]) 
     with cols_dec_download_outer[1]:
         if st.session_state.get('decrypt_output_plain_path') and os.path.exists(st.session_state.decrypt_output_plain_path):
-            download_fn_dec = "message_decrypted.txt"
-            if uploaded_cipher_decrypt and uploaded_cipher_decrypt.name:
-                base_name = uploaded_cipher_decrypt.name.replace("_cipher.txt", "").replace("_cipher", "").replace(".txt","")
-                original_ext = os.path.splitext(uploaded_cipher_decrypt.name)[1] if "_cipher" not in uploaded_cipher_decrypt.name else ".txt"
-                download_fn_dec = f"{base_name}_decrypted{original_ext}"
+            download_fn_dec = os.path.basename(st.session_state.decrypt_output_plain_path)
             with open(st.session_state.decrypt_output_plain_path, "rb") as fp:
                 st.download_button(
-                    label=f"Download Decrypted File", data=fp, file_name=download_fn_dec, 
-                    mime="text/plain", key="download_decrypted_button", type="secondary", use_container_width=True
+                    label=f"Download Decrypted File", 
+                    data=fp, 
+                    file_name=download_fn_dec, # Use filename from script
+                    mime="application/octet-stream", # For arbitrary binary files
+                    key="download_decrypted_button", type="secondary", use_container_width=True
                 )
-        else:
-            st.empty()
+        # else: st.empty()
 
-# --- 4. Compare Uploaded Text Files ---
-with st.expander("Step 4: Compare Two Text Files"):
-    st.write("Upload two text files to compare their content.")
+# --- 4. Verify Decryption (Compare Files) ---
+with st.expander("Step 4: Verify Decryption (Compare Files)"):
+    st.write("Upload two files (e.g., original and decrypted) to compare their content byte-by-byte.")
+    st.write("Previews for common formats like images, PDFs, and text will be shown below if comparison is initiated.")
 
     col_upload1, col_upload2 = st.columns(2)
     with col_upload1:
-        file1_compare = st.file_uploader("Upload First File:", type=['txt'], key="compare_file1_upload")
+        file1_compare = st.file_uploader("Upload First File (e.g., Original):", type=None, key="compare_file1_upload_bin_v3") # New key
     with col_upload2:
-        file2_compare = st.file_uploader("Upload Second File:", type=['txt'], key="compare_file2_upload")
+        file2_compare = st.file_uploader("Upload Second File (e.g., Decrypted):", type=None, key="compare_file2_upload_bin_v3") # New key
 
-    cols_compare_button_layout = st.columns([1, 1, 1])
+    cols_compare_button_layout = st.columns([1,1.5,1]) 
     with cols_compare_button_layout[1]:
-        compare_button_pressed = st.button("Compare Files", key="compare_files_button", type="primary", use_container_width=True)
+        compare_button_pressed = st.button("Compare Files & Show Previews", key="compare_files_button_bin_v3", type="primary", use_container_width=True) # New key
 
     if compare_button_pressed:
         if file1_compare is not None and file2_compare is not None:
-            content1_orig, content2_orig = "", "" # Store original content for display
-            valid_read = True
-            try:
-                content1_orig = file1_compare.getvalue().decode('utf-8')
-            except Exception as e:
-                content1_orig = f"[Error reading {file1_compare.name}: {e}]"
-                st.error(f"Could not read {file1_compare.name}. Ensure it's a valid UTF-8 text file.")
-                valid_read = False
+            bytes1 = file1_compare.getvalue()
+            bytes2 = file2_compare.getvalue()
 
-            try:
-                content2_orig = file2_compare.getvalue().decode('utf-8')
-            except Exception as e:
-                content2_orig = f"[Error reading {file2_compare.name}: {e}]"
-                st.error(f"Could not read {file2_compare.name}. Ensure it's a valid UTF-8 text file.")
-                valid_read = False
+            # --- Comparison Result First ---
+            if bytes1 == bytes2:
+                st.success(f"✅ SUCCESS: The content of `{file1_compare.name}` and `{file2_compare.name}` is identical (byte-by-byte).")
+            else:
+                st.error(f"❌ FAILURE: The content of `{file1_compare.name}` and `{file2_compare.name}` differs (byte-by-byte).")
+            
+            st.markdown("---") # Separator
+            st.subheader("File Previews:")
 
-            # Display original file contents side-by-side
-            disp_col1, disp_col2 = st.columns(2)
-            with disp_col1:
-                st.subheader(f"Content of: {file1_compare.name}")
-                st.text_area("File 1 Content", value=content1_orig, height=250, disabled=True, key="compare_text1_area_display", # Renamed key slightly
-                                help="Content of the first uploaded file.")
-            with disp_col2:
-                st.subheader(f"Content of: {file2_compare.name}")
-                st.text_area("File 2 Content", value=content2_orig, height=250, disabled=True, key="compare_text2_area_display", # Renamed key slightly
-                                help="Content of the second uploaded file.")
+            preview_col1, preview_col2 = st.columns(2)
 
-            if valid_read:
-                # --- Internal Normalization Steps ---
-                content1_norm = content1_orig.replace('\r\n', '\n')
-                content2_norm = content2_orig.replace('\r\n', '\n')
-
-                lines1 = [line.rstrip() for line in content1_norm.splitlines()]
-                lines2 = [line.rstrip() for line in content2_norm.splitlines()]
-
-                content1_final_norm = "\n".join(lines1).strip()
-                content2_final_norm = "\n".join(lines2).strip()
-                # --- End of Internal Normalization ---
-
-                if content1_final_norm == content2_final_norm:
-                    st.success("✅ SUCCESS: The content of the two files is identical!")
-                else:
-                    st.error("❌ FAILURE: The content of the two files differs.")
+            def display_preview(column, uploaded_file, file_bytes, file_label="File"):
+                with column:
+                    st.markdown(f"**Preview of: `{uploaded_file.name}`**")
+                    file_type = uploaded_file.type
                     
-                    import difflib
-                    # Generate diff based on the internally normalized content
-                    diff = list(difflib.unified_diff(
-                        content1_final_norm.splitlines(keepends=True),
-                        content2_final_norm.splitlines(keepends=True),
-                        fromfile=file1_compare.name, # Show original filenames in diff header
-                        tofile=file2_compare.name,   # Show original filenames in diff header
-                        lineterm='',
-                    ))
-                    
-                    if diff:
-                        st.text("Detailed Differences (highlighting subtle variations):")
-                        st.code("".join(diff), language='diff')
-                    else:
-                        # This case should be extremely rare if the normalized strings differ
-                        # but difflib finds no difference. Could indicate a bug in normalization
-                        # or an extremely unusual character difference.
-                        st.warning("The files are considered different, but no specific variations were highlighted by the diff tool. This might indicate very subtle, non-visible character differences.")
+                    preview_successful = False
+                    if file_type: # Check if MIME type is available
+                        if file_type.startswith("image/"):
+                            try:
+                                column.image(file_bytes, use_container_width=True) 
+                                preview_successful = True
+                            except Exception as e:
+                                column.warning(f"Could not display image preview: {e}")
+                        elif file_type == "application/pdf":
+                            try:
+                                import base64 
+                                base64_pdf = base64.b64encode(file_bytes).decode('utf-8')
+                                pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="400px" type="application/pdf" style="border: none;"></iframe>'
+                                column.markdown(pdf_display, unsafe_allow_html=True)
+                                preview_successful = True
+                            except Exception as e:
+                                column.warning(f"Could not display PDF preview: {e}")
+                        elif file_type.startswith("text/"): # Covers text/plain, text/csv, text/html, etc.
+                            try:
+                                text_content = ""
+                                # Try common encodings
+                                for encoding in ['utf-8', 'latin-1', 'ascii', 'utf-16', 'utf-32']:
+                                    try:
+                                        text_content = file_bytes.decode(encoding)
+                                        break 
+                                    except UnicodeDecodeError:
+                                        continue
+                                    
+                                if text_content:
+                                    # CORRECTED KEY: Use uploaded_file.file_id
+                                    # Also ensure file_label is part of key if two text files could be shown
+                                    unique_key = f"text_preview_{uploaded_file.file_id}_{file_label.lower().replace(' ', '_')}"
+                                    if file_type == "text/html":
+                                        column.markdown(text_content, unsafe_allow_html=True) # Render HTML
+                                    elif file_type == "text/markdown" or file_type == "text/x-markdown":
+                                        column.markdown(text_content) # Render Markdown
+                                    elif file_type == "text/csv":
+                                        import pandas as pd
+                                        from io import StringIO
+                                        try:
+                                            df = pd.read_csv(StringIO(text_content))
+                                            column.dataframe(df)
+                                        except Exception as e_csv:
+                                            column.warning(f"Could not parse CSV: {e_csv}. Displaying as plain text.")
+                                            column.text_area(f"Text Content", value=text_content, height=300, disabled=True, key=unique_key)
+                                    else: # Default to text_area for other text/* types
+                                        column.text_area(f"Text Content", value=text_content, height=300, disabled=True, key=unique_key)
+                                    preview_successful = True
+                                else:
+                                    column.info("Could not decode text content with common encodings.")
+                            except Exception as e:
+                                column.warning(f"Could not display text preview: {e}")
+                        elif file_type.startswith("audio/"):
+                            try:
+                                column.audio(file_bytes, format=file_type)
+                                preview_successful = True
+                            except Exception as e:
+                                column.warning(f"Could not display audio preview: {e}")
+                        elif file_type.startswith("video/"):
+                            try:
+                                column.video(file_bytes, format=file_type)
+                                preview_successful = True
+                            except Exception as e:
+                                column.warning(f"Could not display video preview: {e}")
+                        # Add more specific handlers above this else if needed
+                        
+                    if not preview_successful:
+                        # Fallback for unknown or unhandled types, or if MIME type is missing
+                        column.info(f"Preview not available for `{uploaded_file.name}` (Type: `{file_type if file_type else 'Unknown'}`).")
+                        column.caption(f"Size: {len(file_bytes):,} bytes")
+
+
+            display_preview(preview_col1, file1_compare, bytes1, "File1")
+            display_preview(preview_col2, file2_compare, bytes2, "File2")
+
         else:
-            st.warning("Please upload both files for comparison.")
+            st.warning("Please upload both files for comparison and preview.")
