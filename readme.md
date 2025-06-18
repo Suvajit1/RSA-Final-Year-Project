@@ -1,15 +1,23 @@
 # RSA Encryption with SageMath
 
-This project demonstrates a simple RSA encryption system implemented using SageMath. It consists of scripts for key generation, encryption, and decryption, along with a test driver that verifies the entire process.
+## Project Description
 
-## Live link - https://huggingface.co/spaces/Nobita69/RSA-Cryptography-Tool
+This project provides a simple yet robust implementation of the RSA encryption algorithm using SageMath. It includes scripts for generating RSA key pairs, encrypting plaintext files, decrypting ciphertext files, and a test driver to automate and verify the entire process. The project is designed for educational purposes and demonstrates the practical application of public-key cryptography.
 
-## Video Demonstration
+## Installation Instructions
 
+1. **Install SageMath**  
+  Download and install SageMath from [sagemath.org](https://www.sagemath.org).  
+  Follow the platform-specific installation instructions provided on the website.
 
+2. **Clone the Repository**  
+  ```bash
+  git clone https://github.com/your-username/rsa_final-year-project.git
+  cd rsa_final-year-project
+  ```
 
-https://github.com/user-attachments/assets/3155ccfe-3555-42ba-b0df-a1c2d6ca6cc9
-
+3. **(Optional) Set Up Python Environment**  
+  SageMath includes a compatible Python environment, so no additional Python setup is required for running the RSA scripts.
 
 
 ## Project Structure
@@ -51,6 +59,7 @@ https://github.com/user-attachments/assets/3155ccfe-3555-42ba-b0df-a1c2d6ca6cc9
 - **Python 3:**  
   The scripts are written in Python 3. SageMath includes a compatible Python environment, but you must use Sage to run the RSA scripts.
 
+
 ## Usage
 
 1. **Generate RSA Keys:**
@@ -88,3 +97,25 @@ https://github.com/user-attachments/assets/3155ccfe-3555-42ba-b0df-a1c2d6ca6cc9
    python3 test_rsa.py
    ```
    This script runs an end-to-end test by generating keys, encrypting a sample message, decrypting the ciphertext, and verifying that the decrypted text matches the original.
+
+
+## Contributors
+
+- Suvajit Sadhukhan ([Nobita69](https://github.com/Nobita69))
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+RSA Encryption with SageMath
+
+
+
+This project demonstrates a simple RSA encryption system implemented using SageMath. It consists of scripts for key generation, encryption, and decryption, along with a test driver that verifies the entire process.
+
+## Live link - https://huggingface.co/spaces/Nobita69/RSA-Cryptography-Tool
+
+## Video Demonstration
+
+
+https://github.com/user-attachments/assets/3155ccfe-3555-42ba-b0df-a1c2d6ca6cc9
+
